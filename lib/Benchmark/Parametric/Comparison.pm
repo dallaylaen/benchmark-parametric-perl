@@ -154,4 +154,18 @@ sub _percent_diff {
     };
 };
 
+=head1 LICENSE AND COPYRIGHT
+
+This module is part of L<Benchmark::Parametric>.
+
+Copyright 2018 Konstantin S. Uvarin.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the the Artistic License (2.0). You may obtain a
+copy of the full license at:
+
+L<http://www.perlfoundation.org/artistic_license_2_0>
+
+=cut
+
 1;
