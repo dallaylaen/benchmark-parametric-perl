@@ -1,0 +1,5 @@
+Revision history for Benchmark-Parametric
+
+0.01    Fri Jul 13 2018
+        - API run(), slope(), constant() and ops_per_second() implemented
+
