@@ -1,5 +1,6 @@
 package Benchmark::Parametric::Stat;
 
+use 5.010;
 use Moo;
 our $VERSION = '0.01';
 

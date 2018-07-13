@@ -1,6 +1,8 @@
 package Benchmark::Parametric;
 
-use 5.006;
+use 5.010;
+use Moo;
+our $VERSION = '0.01';
 
 =head1 NAME
 
@@ -16,7 +18,7 @@ Benchmark::Parametric - Parametric benchmarking
 
     use Benchmark::Parametric;
 
-    my $bm = Benchmark::Parametric->new( maxtime => 1);
+    my $bm = Benchmark::Parametric->new( max_time => 1);
     my $stat = $bm->run( \&codes );
 
     printf "Codes is as fast as %0.1f rps\n", $stat->rps;
@@ -25,18 +27,15 @@ Benchmark::Parametric - Parametric benchmarking
 
 =cut
 
-use Moo;
-our $VERSION = '0.01';
-
 use Time::HiRes qw(time);
 
 use Benchmark::Parametric::Stat;
 
-has setup    => is => 'lazy', builder => sub { sub { @_ }; };
-has teardown => is => 'lazy', builder => sub { sub { 1 } };
-has maxtime  => is => 'lazy', builder => sub { 1 };
-has stoptime => is => 'lazy', builder => sub { 10 * $_[0]->maxtime };
-has scale    => is => 'lazy', builder => sub { 1.3 };
+has setup    => is => 'rw', default => sub { sub { @_ }; };
+has teardown => is => 'rw', default => sub { sub { 1 } };
+has max_time  => is => 'rw', default => sub { 1 };
+has stop_time => is => 'rw', default => sub { 10 * $_[0]->max_time };
+has scale    => is => 'rw', default => sub { 1.3 };
 
 =head2 new
 
@@ -46,9 +45,21 @@ has scale    => is => 'lazy', builder => sub { 1.3 };
 
 =over
 
-=item * setup - prepare environment for code under test.
+=item * setup - prepare environment for code under test;
 
-=item * maxtime - time to execute code under test.
+=item * teardown - check that output is correct and destroy temporary objects;
+
+=item * max_time - time to execute code under test;
+
+=item * stop_time - fail unconditionally if execution takes that long
+
+Default is C<max_time> * 10
+
+=item * scale - multiply parameter by this value with each iteration.
+
+Default is 1.3
+
+Note that parameter is rounded to an integer and increased by at least 1.
 
 =back
 
@@ -70,8 +81,8 @@ Returns a L<Benchmark::Parametric::Stat> instance.
 sub run {
     my ($self, $code) = @_;
 
-    my $left = $self->maxtime;
-    my $tstop = $self->stoptime;
+    my $left = $self->max_time;
+    my $tstop = $self->stop_time;
     local $_ = 1;
     my $setup = $self->setup;
     my $teardown = $self->teardown;

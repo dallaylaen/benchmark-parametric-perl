@@ -12,7 +12,7 @@ $SIG{ALRM} = sub {
 };
 
 my $bm = Benchmark::Parametric->new(
-    maxtime => 0.001,
+    max_time => 0.001,
 );
 
 alarm 60;
