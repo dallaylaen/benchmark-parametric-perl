@@ -14,7 +14,7 @@ BEGIN {
             allow_words => [qw[
                 Konstantin Uvarin
                 stringified
-                github metacpan annocpan CPAN
+                github metacpan annocpan CPAN RT perldoc
             ]],
         }
     );
