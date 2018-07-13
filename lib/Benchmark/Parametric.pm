@@ -6,22 +6,46 @@ our $VERSION = '0.01';
 
 =head1 NAME
 
-Benchmark::Parametric - Parametric benchmarking
+Benchmark::Parametric - Measure and compare code speed.
 
 =head1 DESCRIPTION
 
+This module measures the performance of Perl code blocks.
 
+It does so by passing an integer parameter (typically iteration count)
+to the subroutine under test and examining the resulting execution times.
+
+Such approach allows to time exactly the iterated snippet
+as the surrounding code is cancelled out.
 
 =head1 SYNOPSIS
 
-
+Comparing code snippets or idioms, outputting a summary
+similar to that of L<Benchmark>:
 
     use Benchmark::Parametric;
 
-    my $bm = Benchmark::Parametric->new( max_time => 1);
-    my $stat = $bm->run( \&codes );
+    my $bm = Benchmark::Parametric->new;
+    my $result = $bm->compare(
+        naive => sub { do_something() for 1 .. $_ },
+        pp    => sub { My::Module::do_something for 1 .. $_ },
+        xs    => sub { My::Module::XS::do_something for 1 .. $_ },
+    );
+    print $result;
 
-    printf "Codes is as fast as %0.1f rps\n", $stat->rps;
+Measuring time to process a single array element,
+while making sure that processing actually happened:
+
+    use Benchmark::Parametric;
+
+    my $bm = Benchmark::Parametric->new(
+        setup    => sub { [ 1 .. $_ ] },
+        teardown => sub { $_[0] == $_ or die "Noop detected" },
+    );
+
+    # dies if sub doesn't return the expected value
+    my $stat = $bm->run( sub { my $i; $i++ for @{ $_[0] }; $i } );
+    print $stat->ops_per_second;
 
 =head1 METHODS
 
@@ -32,11 +56,11 @@ use Time::HiRes qw(time);
 use Benchmark::Parametric::Stat;
 use Benchmark::Parametric::Comparison;
 
-has setup    => is => 'rw', default => sub { sub { @_ }; };
-has teardown => is => 'rw', default => sub { sub { 1 } };
+has setup     => is => 'rw', default => sub { sub { @_ }; };
+has teardown  => is => 'rw', default => sub { sub { 1 } };
 has max_time  => is => 'rw', default => sub { 1 };
 has stop_time => is => 'rw', default => sub { 10 * $_[0]->max_time };
-has scale    => is => 'rw', default => sub { 1.3 };
+has scale     => is => 'rw', default => sub { 1.3 };
 
 =head2 new
 
@@ -46,15 +70,29 @@ has scale    => is => 'rw', default => sub { 1.3 };
 
 =over
 
-=item * setup - prepare environment for code under test;
+=item * setup - prepare environment for code under test.
 
-=item * teardown - check that output is correct and destroy temporary objects;
+The argument is a coderef that receives a positive integer argument.
+If present, its scalar context return will be passed to code under test
+instead of the counter.
 
-=item * max_time - time to execute code under test;
+This may be used to generate arrays of data, temporary files etc.
+The time spent in this subroutine is not accounted for.
 
-=item * stop_time - fail unconditionally if execution takes that long
+$_ is the iteration count during run of this sub.
 
-Default is C<max_time> * 10
+=item * teardown - check that output is correct and destroy temporary objects.
+
+Whatever was returned by code under test is given to this subroutine.
+
+$_ is the iteration count during run of this sub.
+
+=item * max_time - cumulative execution time.
+
+=item * stop_time - if the code doesn't return in this time,
+assume it is hanging and die.
+
+Default is C<max_time> * 10.
 
 =item * scale - multiply parameter by this value with each iteration.
 
@@ -70,10 +108,13 @@ Note that parameter is rounded to an integer and increased by at least 1.
 
     $bm->run( \&code )
 
-C<code> must take 1 integer argument.
-
 Execute C<code> multiple times with different argument values,
 measure execution times, and record statistics.
+
+C<code> must take 1 argument as returned by C<setup> function,
+or a positive integer if no setup was specified.
+
+C<$_> is set to the iteration count during the execution of code.
 
 Returns a L<Benchmark::Parametric::Stat> instance.
 
@@ -112,6 +153,7 @@ sub run {
     compare( name1 => \&sub1, ... )
 
 Compare several methods of doing the same thing.
+The rules for subroutines are the same as in the run() method discussed above.
 
 Output is a L<Benchmark::Parametric::Comparison> object that can be simply
 printed out to get a table like that of C<Benchmark>.
