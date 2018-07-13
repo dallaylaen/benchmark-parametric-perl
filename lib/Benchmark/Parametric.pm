@@ -30,6 +30,7 @@ Benchmark::Parametric - Parametric benchmarking
 use Time::HiRes qw(time);
 
 use Benchmark::Parametric::Stat;
+use Benchmark::Parametric::Comparison;
 
 has setup    => is => 'rw', default => sub { sub { @_ }; };
 has teardown => is => 'rw', default => sub { sub { 1 } };
@@ -104,6 +105,29 @@ sub run {
     };
 
     return $stat;
+};
+
+=head2 compare
+
+    compare( name1 => \&sub1, ... )
+
+Compare several methods of doing the same thing.
+
+Output is a L<Benchmark::Parametric::Comparison> object that can be simply
+printed out to get a table like that of C<Benchmark>.
+
+=cut
+
+sub compare {
+    my ($self, %codes) = @_;
+
+    my $cmp = Benchmark::Parametric::Comparison->new;
+    foreach my $name( keys %codes ) {
+        my $stat = $self->run( $codes{$name} );
+        $cmp->add_result( $name => $stat );
+    };
+
+    return $cmp;
 };
 
 =head1 AUTHOR
