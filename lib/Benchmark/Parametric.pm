@@ -61,6 +61,8 @@ has teardown  => is => 'rw', default => sub { sub { 1 } };
 has max_time  => is => 'rw', default => sub { 1 };
 has stop_time => is => 'rw', default => sub { 10 * $_[0]->max_time };
 has scale     => is => 'rw', default => sub { 1.3 };
+has max_arg   => is => 'rw', default => sub { 4_000_000_000 };
+has min_arg   => is => 'rw', default => sub { 1 };
 
 =head2 new
 
@@ -100,6 +102,10 @@ Default is 1.3
 
 Note that parameter is rounded to an integer and increased by at least 1.
 
+=item * min_arg - minimal parameter value. Default is 1.
+
+=item * max_arg - maximum parameter value. Default is 4 billion.
+
 =back
 
 =cut
@@ -123,17 +129,14 @@ Returns a L<Benchmark::Parametric::Stat> instance.
 sub run {
     my ($self, $code) = @_;
 
-    my $left = $self->max_time;
-    my $tstop = $self->stop_time;
-    local $_ = 0;
-    my $setup = $self->setup;
+    my $left     = $self->max_time;
+    my $tstop    = $self->stop_time;
+    my $setup    = $self->setup;
     my $teardown = $self->teardown;
 
-    my $stat = Benchmark::Parametric::Stat->new;
+    local $_     = $self->min_arg;
+    my $stat     = Benchmark::Parametric::Stat->new;
     while ($left > 0) {
-        $_ = int ( $_ * $self->scale + 1 );
-        $_ == $_ + 1 and last;
-
         my $arg = $setup->( $_ );
 
         alarm $tstop if $tstop;
@@ -145,6 +148,9 @@ sub run {
         $teardown->($ret); # or die?
         $stat->add_point($_, $time);
         $left -= $time;
+
+        $_ = int ( $_ * $self->scale + 1 );
+        $_ > $self->max_arg and last;
     };
 
     return $stat;
