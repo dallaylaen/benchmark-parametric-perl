@@ -32,8 +32,8 @@ is_deeply [sort ($first, $second)], ["grep", "map"], "Names preserved in summary
 # foo nnn -- -\d
 # bar nnn +\d --
 like $head, qr{ *name +op/sec +$first +$second}, "Summary head as expected";
-like $lines[0], qr/$first +[0-9]+ +-- +-[0-9]+[%x]/, "First line as expected";
-like $lines[1], qr/$second +[0-9]+ +\+?[0-9]+[%x] +--/, "Second line as expected";
+like $lines[0], qr/$first +[0-9]+ +-- +-?[0-9.]+[%x]/, "First line as expected";
+like $lines[1], qr/$second +[0-9]+ +\+?[0-9.]+[%x] +--/, "Second line as expected";
 
 
 done_testing;
