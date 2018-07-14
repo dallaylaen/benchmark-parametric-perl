@@ -51,10 +51,16 @@ while making sure that processing actually happened:
 
 =cut
 
-use Time::HiRes qw(time);
+use Carp;
+use Time::HiRes;
 
 use Benchmark::Parametric::Stat;
 use Benchmark::Parametric::Comparison;
+
+my %timer = (
+    time => \&Time::HiRes::time,
+    cpu  => \&Time::HiRes::clock,
+);
 
 has setup     => is => 'rw', default => sub { sub { shift }; };
 has teardown  => is => 'rw', default => sub { sub { 1 } };
@@ -63,6 +69,17 @@ has stop_time => is => 'rw', default => sub { 10 * $_[0]->max_time };
 has scale     => is => 'rw', default => sub { 1.3 };
 has max_arg   => is => 'rw', default => sub { 4_000_000_000 };
 has min_arg   => is => 'rw', default => sub { 1 };
+has clock     => is => 'rw', coerce => sub {
+    my $todo = shift // 'time';
+
+    return $todo if ref $todo and UNIVERSAL::isa( $todo, 'CODE' );
+    croak "Cannot use ".(ref $todo)."as timer"
+        if ref $todo;
+
+    croak "Unknown timer spec '$todo', available: ".join ",", keys %timer
+        unless $timer{$todo};
+    return $timer{$todo};
+}, default => sub { 'time' };
 
 =head2 new
 
@@ -133,6 +150,7 @@ sub run {
     my $tstop    = $self->stop_time;
     my $setup    = $self->setup;
     my $teardown = $self->teardown;
+    my $clock    = $self->clock;
 
     local $_     = $self->min_arg;
     my $stat     = Benchmark::Parametric::Stat->new;
@@ -140,9 +158,9 @@ sub run {
         my $arg = $setup->( $_ );
 
         alarm $tstop if $tstop;
-        my $t0 = time;
+        my $t0 = $clock->();
         my $ret = $code->($arg);
-        my $time = time - $t0;
+        my $time = $clock->() - $t0;
         alarm 0;
 
         $teardown->($ret); # or die?
