@@ -132,6 +132,8 @@ sub run {
     my $stat = Benchmark::Parametric::Stat->new;
     while ($left > 0) {
         $_ = int ( $_ * $self->scale + 1 );
+        $_ == $_ + 1 and last;
+
         my $arg = $setup->( $_ );
 
         alarm $tstop if $tstop;
