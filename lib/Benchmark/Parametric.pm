@@ -56,7 +56,7 @@ use Time::HiRes qw(time);
 use Benchmark::Parametric::Stat;
 use Benchmark::Parametric::Comparison;
 
-has setup     => is => 'rw', default => sub { sub { @_ }; };
+has setup     => is => 'rw', default => sub { sub { shift }; };
 has teardown  => is => 'rw', default => sub { sub { 1 } };
 has max_time  => is => 'rw', default => sub { 1 };
 has stop_time => is => 'rw', default => sub { 10 * $_[0]->max_time };
@@ -125,7 +125,7 @@ sub run {
 
     my $left = $self->max_time;
     my $tstop = $self->stop_time;
-    local $_ = 1;
+    local $_ = 0;
     my $setup = $self->setup;
     my $teardown = $self->teardown;
 

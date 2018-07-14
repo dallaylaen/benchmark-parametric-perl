@@ -148,7 +148,7 @@ sub _percent_diff {
 
     my $diff = $new / $old;
     if ($diff < 1/1.6 || $diff > 1.6) {
-        return sprintf "x%1.1f", $diff;
+        return sprintf "%1.1fx", $diff;
     } else {
         return sprintf "%1.0f%%", ($diff - 1) * 100;
     };
